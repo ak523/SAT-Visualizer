@@ -1,73 +1,63 @@
-# React + TypeScript + Vite
+# SAT-Visualizer — Constraint Solving Playground
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive, visual web application that helps students understand SAT solvers by stepping through every decision, propagation, conflict, and backtrack of the DPLL algorithm.
 
-Currently, two official plugins are available:
+**Live demo:** https://ak523.github.io/SAT-Visualizer/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Step-by-step DPLL visualization** — navigate forward and backward through every micro-step: Ready → Deciding → Propagating → Conflict! → Backtracking → SAT/UNSAT.
+- **Human-readable explanations** — each step includes a plain-English description of what the solver is doing and why.
+- **CNF formula input** — enter any propositional formula in Conjunctive Normal Form directly in the browser; one clause per line, literals separated by spaces, prefix with `-` for negation.
+- **Assignment table** — shows each variable's value, decision level, and the reason clause (or marks it as a free decision).
+- **Clause list** — colour-coded to show satisfied (✓), conflicted (✗), and undetermined (?) clauses.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Input Format
 
-## Expanding the ESLint configuration
+One clause per line. Each clause is a disjunction of space-separated literals.  
+Prefix a literal with `-` to negate it. Lines starting with `#` are comments.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+# (x1 ∨ x2) ∧ (¬x1 ∨ x3) ∧ (¬x2 ∨ ¬x3)
+x1 x2
+-x1 x3
+-x2 -x3
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```
+src/
+  engine/               # Pure TypeScript solver logic (no React)
+    types.ts            # Shared interfaces: Clause, SolverState, etc.
+    dpll.ts             # DPLL solver as a JavaScript Generator function
+  components/           # React UI components
+    ClauseInput.tsx     # CNF formula textarea + parser
+    SolverControls.tsx  # Step Forward / Back / Reset buttons
+    StateViewer.tsx     # Renders the full SolverState snapshot
+  App.tsx               # Top-level app: collects all steps, manages stepIndex
+  main.tsx              # React DOM entry point
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Architecture
+
+The UI and solver are **strictly separated**:
+
+- `src/engine/dpll.ts` is pure TypeScript — zero React imports. It exports `function* runDPLL(clauses)`, a generator that yields one `SolverState` per micro-step.
+- `App.tsx` eagerly runs the generator to completion, collecting all states into an array. The React UI then simply renders `states[stepIndex]` and adjusts `stepIndex` on button clicks.
+
+This makes the algorithm extremely easy to understand and test independently of the UI.
+
+## Tech Stack
+
+- [Vite](https://vite.dev/) 7 + [React](https://react.dev/) 19 + TypeScript 5
+- Static site, deployable to GitHub Pages with `npm run deploy`
+
+## Development
+
+```bash
+npm install
+npm run dev       # start dev server at http://localhost:5173/SAT-Visualizer/
+npm run build     # type-check + production build → dist/
+npm run deploy    # build + push to gh-pages branch
 ```

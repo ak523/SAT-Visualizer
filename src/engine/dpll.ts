@@ -117,18 +117,17 @@ function findUnitClause(
     if (clause.isSatisfied === true) continue; // already done
 
     let unassigned: Literal | null = null;
-    let conflict = false;
 
     for (const lit of clause.literals) {
       const val = evalLiteral(lit, assignments);
-      if (val === true) { conflict = false; unassigned = null; break; } // satisfied
+      if (val === true) { unassigned = null; break; } // satisfied
       if (val === null) {
-        if (unassigned !== null) { conflict = false; unassigned = null; break; } // >1 free
+        if (unassigned !== null) { unassigned = null; break; } // >1 free literal
         unassigned = lit;
       }
     }
 
-    if (unassigned !== null && !conflict) return [clause, unassigned];
+    if (unassigned !== null) return [clause, unassigned];
   }
   return null;
 }
